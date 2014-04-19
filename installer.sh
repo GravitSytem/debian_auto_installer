@@ -101,6 +101,7 @@ function format_disk() {
 		echo " Creating /boot/efi partition"
 		parted -a optimal -s /dev/${DISK} unit MiB mkpart ESI fat32 1 $boot_end >/dev/null
 	elif [ ${INSTALLATION_TYPE} -eq "bios" ]
+	then
 		boot_end=128
 		" Creating /boot partition"
 		parted -a optimal -s /dev/${DISK} unit MiB mkpart primary 1 $boot_end >/dev/null
