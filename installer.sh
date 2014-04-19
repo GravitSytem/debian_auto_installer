@@ -5,7 +5,7 @@
 
 INSTALLATION_DIR="/mnt/debian"
 TIMEZONE="Europe/Rome"
-LANG="it_IT.UTF-8"
+LANGUAGE="it_IT.UTF-8"
 KEYMAP="it"
 FQDN="Gandalf.net"
 ROOT_PASSWORD="root_passwd"
@@ -41,6 +41,7 @@ function usage() {
 	echo " -X : Desktop environment (eg. xfce, gnome, none)"
 	exit 1
 }
+
 
 # Show a summary of the installation
 
@@ -265,7 +266,7 @@ function manual_chroot() {
 	fi
 }
 
-function umount() {
+function umount_disk() {
 	sync
 	if [ ${INSTALLATION_TYPE} -eq "uefi" ]
 	then
@@ -286,33 +287,33 @@ while getopts ${OPTSTRING} OPT
 do
 	case ${OPT} in
 		d)
-			;;
+			DISK=${OPTARG};;
 		w)
-			;;
+			ROOT_PASSWORD=${OPTARG};;
 		b)
-			;;
+			PARTITION_TYPE=${OPTARG};;
 		f)
-			;;
+			FS=${OPTARG};;
 		k)
-			;;
+			KEYMAP=${OPTARG};;
 		h)
 			usage ;;
 		l)
-			;;
+			LANGAUGE=${OPTARG};;
 		n)
-			;;
+			FQDN=${OPTARG};;
 		f)
-			;;
+			TIMEZONE=${OPTARG};;
 		B)
-			;;
+			INSTALLATION_TYPE=${OPTARG};;
 		v)
-			;;
+			DEBIAN_VERSION=${OPTARG};;
 		a)
-			;;
+			ARCH=${OPTARG};;
 		s)
-			;;
+			INSTALLATION_ADDONS=${OPTARG};;
 		X)
-			;;
+			DE=${OPTARG};;
 		*)
 			usage ;;
 	esac
@@ -324,3 +325,21 @@ then
 	exit 1
 fi
 
+if [ ! -f /usr/share/zoneinfo/${TIMEZONE} ]
+then
+	echo " Invalid timezone"
+	exit 1
+fi
+
+installation_summary
+warning
+format_disk
+mount_disk
+install_core
+create_addons_installer
+exec_addons_installer
+make_fstab
+create_conf
+apply_conf
+manual_chroot
+umount_disk
