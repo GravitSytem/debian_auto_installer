@@ -8,18 +8,39 @@ TIMEZONE="Europe/Rome"
 LANG="it_IT.UTF-8"
 KEYMAP="it"
 FQDN="Gandalf.net"
-ROOT_PASSWORD="023946rr"
+ROOT_PASSWORD="root_passwd"
 ARCH="amd64"
 DEBIAN_VERSION="jessie"
 FS="ext4"
 PARTITION_TYPE="gpt"
 INSTALLATION_TYPE="uefi"
-INSTALLATION_ADDONS="notebook"
+INSTALLATION_ADDONS="laptop" # taskel package set (desktop, web-server, print-server, dns-server, file-server, mail-server, database-server, ssh-server, laptop, manuals)
 DE="xfce"
 DISK="/dev/sda"
 SET_USER=1
-USER="rmariotti"
-USER_PASSWD="1147693r"
+USER="user"
+USER_PASSWD="user_passwd"
+
+function usage() {
+	echo
+	echo " Usage"
+	echo " ${0} -d sdX -w password -b partition type -f filesystem -k keymap -l lang -n hostname -t timezone -B bios/uefi -v debian version -a arch -s taskel sets -X desktop environment"
+	echo 
+	echo " -d : Target device"
+	echo " -w : Root password"
+	echo " -b : Partition type (eg. gpt, msdos)"
+	echo " -f : Filesystem (eg. ext4, btrfs, xfs ...)"
+	echo " -k : Keymap (eg. en, it, fr, es ...)"
+	echo " -l : Default language (eg. EN_us.UTF-8, IT_it.UTF-8 ...)"
+	echo " -n : Hostname"
+	echo " -t : Timezone (eg. Europe/Rome)"
+	echo " -B : Installation type (eg. bios, uefi)"
+	echo " -v : Debian version (eg. wheezy, jessie, sid)"
+	echo " -a : Architecture (eg. amd64, i486 ...)"
+	echo " -s : Taskel sets (eg. laptop, web-server, file-server ...)"
+	echo " -X : Desktop environment (eg. xfce, gnome, none)"
+	exit 1
+}
 
 # Show a summary of the installation
 
@@ -44,7 +65,7 @@ function installation_summary() {
 	fi
 }
 
-# Show a warning before the installation
+# show a warning before the installation
 
 function warning() {
 	loadkeys ${KEYMAP}
@@ -53,6 +74,8 @@ function warning() {
 	echo "Press RETURN to start installation or CTRL-C to cancel."
 	read
 }
+
+# clear disk and create a partition layout
 
 function format_disk() {
 	echo " Clearing partition table on /dev/${DISK}"
@@ -127,7 +150,7 @@ function format_disk() {
 	echo " Making /home filesystem"
 		mkfs.${FS} /dev/${DISK}3 >/dev/null
 
-
+# mount disk 1. /dev/sdX2 --> / 2. /dev/sdx1 --> /boot/efi or /boot 3. /dev/sdx3 --> /home
 
 function mount_disk() {
 	echo " Mounting filesystems"
@@ -146,25 +169,65 @@ function mount_disk() {
 
 }
 
+# install a base debian sistem in the INSTALLATION_DIR
+
 function install_core() {
 	echo " Installing core system"
 	debootstrap --arch ${ARCH} ${DEBIAN_VERSION} ${INSTALLATION_DIR} >/dev/null
+}
+
+# create a script inside the environmen built by debootstrap needed to complete the installation
+
+function create_addons_installer() {
+	# core system
+	touch ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+	echo "apt-get -y update" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+	echo "apt-get -y install linux-image taskel aptitude" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+	if [ ${INSTALLATION_TYPE} -eq "uefi" ]
+	then
+		echo "apt-get -y install grub-efi-amd64\nupdate-grub\ngrub-install --target=x86_64-efi" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+	elif [ ${INSTALLATION_TYPE} -eq "grub" ]
+	then
+		echo "apt-get -y install grub-pc grub-common\nupdate-grub\ngrub-install /dev/${DISK}1" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+	fi
+	echo "taskel install ${INSTALLATION_ADDONS} --new-install" >> ${INSTALLATION_DIR}/usr/local/deb_installer_core.sh
+	# desktop environmen
+	case ${DE} in
+		"xfce")
+			;;
+		"kde")
+			;;
+		"gnome")
+			;;
+		"lxde")
+			;;
+		"mate")
+			;;
+		"none")
+			;;
+		*)
+			;;
+	esac
+
+	
+function exec_addons_installer() {
 	echo " Mounting environment filesystem"
 	mount --bind /dev ${INSTALLATION_DIR}/dev >/dev/null
 	mount --bind /sys ${INSTALLATION_DIR}/sys >/dev/null
 	mount --bind /dev/pts ${INSTALLATION_DIR}/dev/pts >/dev/null
 	mount -t proc none ${INSTALLATION_DIR}/proc >/dev/null
 	cp -L /etc/resolv.conf ${INSTALLATION_DIR}/etc/ >/dev/null
-	chroot ${INSTALLATION_DIR} /bin/bash -c sh deb_installer_core.sh
+	chroot ${INSTALLATION_DIR} /bin/bash -c sh '/usr/local/bin/deb_installer_core.sh'
 }
 
 function make_fstab() {
 	# generating fstab line for /boot/efi or /boot
 	echo " Generating /etc/fstab file"
-	if [${INSTALLATON_TYPE} -eq "uefi"]
+	if [ ${INSTALLATON_TYPE} -eq "uefi" ]
 	then
 		echo "${DISK}1 /boot/efi vfat defaults 1 0" > ${INSTALLAYION_DIR}/etc/fstab
 	elif [${INSTALLATION_TYPE} -eq "bios"]
+	then
 		echo "${DISK}1 /boot ext2 noatime 1 0" > ${INSTALLATION_DIR}/etc/fstab
 	fi
 	# generating fstab line for /
@@ -173,9 +236,91 @@ function make_fstab() {
 	echo "${DISK}3 /home ${FS} defaults 1 2" >> ${INSTALLATION_DIR}/etc/fstab
 }
 
+function add_conf_line() {
+	echo $1 >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_configurator.sh
+}
 
-function configure_system() {
-	echo " Configure system"
-	touch /usr/local/bin/deb_installer_configurator.sh >/dev/null
+function create_conf() {
+	echo " Configuring system"
+	touch /usr/local/bin/deb_installer_configurator.sh 
+	add_conf_line "echo ${FQDN} > /etc/hostname"
+	add_conf_line 'echo "127.0.0.1 localhost" >> /etc/hosts'
+	add_conf_line 'echo "127.0.1.1 ${FQDN}" >> /etc/hosts'
+	add_conf_line 'usermod --passwd ${PASSWORD_ROOT} root'
 
 }
+
+function apply_conf() {
+	echo " Applying conf"
+	chroot ${INSTALLATION_DIR} /bin/bash -c 'sh /usr/local/bin/deb_installer_configurator.sh'
+}
+
+function manual_chroot() {
+	echo " Would you like to do something in chroot?(Raccomanded)"
+	echo " Press y(es) to start chroot or another key to umount disk"
+	read key
+	if [ $key -eq "y" ]
+	then
+		chroot ${INSTALLATION_DIR} /bin/bash
+	fi
+}
+
+function umount() {
+	sync
+	if [ ${INSTALLATION_TYPE} -eq "uefi" ]
+	then
+		echo " Umounting disk"
+		umount -fv ${INSTALLATION_DIR}/boot/efi
+	elif [ ${INSTALLATION_TYPE} -eq "bios" ]
+	then
+		echo " Umounting disk"
+		umount -fv ${INSTALLATION_DIR}/boot
+	fi
+	umount -fv $INSTALLATION_DIR/{home,}
+	echo " System installed"
+}
+
+OPTSTRING=d:w:b:f:k:h:l:n:f:B:v:a:s:X:
+
+while getopts ${OPTSTRING} OPT
+do
+	case ${OPT} in
+		d)
+			;;
+		w)
+			;;
+		b)
+			;;
+		f)
+			;;
+		k)
+			;;
+		h)
+			usage ;;
+		l)
+			;;
+		n)
+			;;
+		f)
+			;;
+		B)
+			;;
+		v)
+			;;
+		a)
+			;;
+		s)
+			;;
+		X)
+			;;
+		*)
+			usage ;;
+	esac
+done
+
+if  [ $(id -u) -ne 0 ]
+then
+	echo "!!! The script must be run as root !!!"
+	exit 1
+fi
+
