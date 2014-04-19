@@ -8,7 +8,7 @@ TIMEZONE="Europe/Rome"
 LANG="it_IT.UTF-8"
 KEYMAP="it"
 FQDN="Gandalf.net"
-ROOT_PASSWORD="023946rr"
+ROOT_PASSWORD=""
 ARCH="amd64"
 DEBIAN_VERSION="jessie"
 FS="ext4"
@@ -19,7 +19,7 @@ DE="xfce"
 DISK="/dev/sda"
 SET_USER=1
 USER="rmariotti"
-USER_PASSWD="1147693r"
+USER_PASSWD=""
 
 # Show a summary of the installation
 
