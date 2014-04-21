@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # automated debian install script
 # require a debian/ubuntu live (booted via uefi for the efi installation), a internet connection and root access
@@ -120,7 +120,7 @@ function format_disk() {
 	then
 		echo " Setting system bootable"
 		parted -a optimal -s /dev/${DISK} toggle 1 boot >/dev/null
-		if [ ${PARTITION_TYPE} -eq "gpt"]
+		if [ "${PARTITION_TYPE}" -eq "gpt"]
 		then
 			sgdisk /dev/${DISK} --attributes=1:set:2 >/dev/null
 		fi
@@ -152,6 +152,7 @@ function format_disk() {
 	echo " Making /home filesystem"
 		mkfs.${FS} /dev/${DISK}3 >/dev/null
 
+}
 # mount disk 1. /dev/sdX2 --> / 2. /dev/sdx1 --> /boot/efi or /boot 3. /dev/sdx3 --> /home
 
 function mount_disk() {
@@ -193,7 +194,7 @@ function create_addons_installer() {
 		echo "apt-get -y install grub-pc grub-common\nupdate-grub\ngrub-install /dev/${DISK}1" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	fi
 	echo "taskel install ${INSTALLATION_ADDONS} --new-install" >> ${INSTALLATION_DIR}/usr/local/deb_installer_core.sh
-	# desktop environmen
+	# desktop environment
 	case ${DE} in
 		"xfce")
 			;;
@@ -210,7 +211,7 @@ function create_addons_installer() {
 		*)
 			;;
 	esac
-
+}
 	
 function exec_addons_installer() {
 	echo " Mounting environment filesystem"
@@ -228,7 +229,7 @@ function make_fstab() {
 	if [ ${INSTALLATON_TYPE} -eq "uefi" ]
 	then
 		echo "${DISK}1 /boot/efi vfat defaults 1 0" > ${INSTALLAYION_DIR}/etc/fstab
-	elif [${INSTALLATION_TYPE} -eq "bios"]
+	elif [ ${INSTALLATION_TYPE} -eq "bios" ]
 	then
 		echo "${DISK}1 /boot ext2 noatime 1 0" > ${INSTALLATION_DIR}/etc/fstab
 	fi
@@ -282,7 +283,7 @@ function umount_disk() {
 	echo " System installed"
 }
 
-OPTSTRING=d:w:b:f:k:h:l:n:f:B:v:a:s:X:
+OPTSTRING=d:w:b:f:k:hl:n:f:B:v:a:s:X:
 
 while getopts ${OPTSTRING} OPT
 do
