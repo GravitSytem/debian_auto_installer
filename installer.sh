@@ -189,10 +189,10 @@ function create_addons_installer() {
 	echo "apt-get -y install linux-image taskel aptitude" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
-		echo "apt-get -y install grub-efi-amd64\nupdate-grub\ngrub-install --target=x86_64-efi" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+		echo "apt-get -y install grub-efi-amd64 && update-grub && grub-install --target=x86_64-efi" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	elif [ ${INSTALLATION_TYPE} == "bios" ]
 	then
-		echo "apt-get -y install grub-pc grub-common\nupdate-grub\ngrub-install /dev/${DISK}1" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+		echo "apt-get -y install grub-pc grub-common && update-grub && grub-install /dev/${DISK}" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	fi
 	echo "taskel install ${INSTALLATION_ADDONS} --new-install" >> ${INSTALLATION_DIR}/usr/local/deb_installer_core.sh
 	# desktop environment
@@ -221,7 +221,7 @@ function exec_addons_installer() {
 	mount --bind /dev/pts ${INSTALLATION_DIR}/dev/pts >/dev/null
 	mount -t proc none ${INSTALLATION_DIR}/proc >/dev/null
 	cp -L /etc/resolv.conf ${INSTALLATION_DIR}/etc/ >/dev/null
-	chroot ${INSTALLATION_DIR} /bin/bash -c sh '/usr/local/bin/deb_installer_core.sh'
+	chroot ${INSTALLATION_DIR} /bin/bash /usr/local/bin/deb_installer_core.sh
 }
 
 function make_fstab() {
@@ -250,13 +250,13 @@ function create_conf() {
 	add_conf_line "echo ${FQDN} > /etc/hostname"
 	add_conf_line 'echo "127.0.0.1 localhost" >> /etc/hosts'
 	add_conf_line 'echo "127.0.1.1 ${FQDN}" >> /etc/hosts'
-	add_conf_line 'usermod --passwd ${PASSWORD_ROOT} root'
+	add_conf_line 'usermod --password ${PASSWORD_ROOT} root'
 
 }
 
 function apply_conf() {
 	echo " Applying conf"
-	chroot ${INSTALLATION_DIR} /bin/bash -c 'sh /usr/local/bin/deb_installer_configurator.sh'
+	chroot ${INSTALLATION_DIR} /bin/bash /usr/local/bin/deb_installer_configurator.sh
 }
 
 function manual_chroot() {
