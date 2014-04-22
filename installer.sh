@@ -186,7 +186,7 @@ function create_addons_installer() {
 	# core system
 	touch ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	echo "apt-get -y update" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
-	echo "apt-get -y install linux-image taskel aptitude" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+	echo "apt-get -y install linux-image-${ARCH} taskel aptitude" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
 		echo "apt-get -y install grub-efi-amd64 && update-grub && grub-install --target=x86_64-efi" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
@@ -221,7 +221,7 @@ function exec_addons_installer() {
 	mount --bind /dev/pts ${INSTALLATION_DIR}/dev/pts >/dev/null
 	mount -t proc none ${INSTALLATION_DIR}/proc >/dev/null
 	cp -L /etc/resolv.conf ${INSTALLATION_DIR}/etc/ >/dev/null
-	chroot ${INSTALLATION_DIR} /bin/bash /usr/local/bin/deb_installer_core.sh
+	chroot ${INSTALLATION_DIR} /bin/bash DEBIAN_FRONTEND=noninteractive /usr/local/bin/deb_installer_core.sh
 }
 
 function make_fstab() {
@@ -263,7 +263,7 @@ function manual_chroot() {
 	echo " Would you like to do something in chroot?(Raccomanded)"
 	echo " Press y(es) to start chroot or another key to umount disk"
 	read key
-	if [ $key -eq "y" ]
+	if [ $key == "y" ]
 	then
 		chroot ${INSTALLATION_DIR} /bin/bash
 	fi
