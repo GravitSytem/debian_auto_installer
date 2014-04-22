@@ -85,7 +85,7 @@ function format_disk() {
 	dd if=/dev/zero of=/dev/${DISK} bs=512 count=2048 >/dev/null 2>&1
 	wipefs -a /dev/${DISK} 2>/dev/null
 	echo " Writing partition table"
-	pated -s /dev/${DISK} mktable ${PARTITION_TYPE}
+	parted -s /dev/${DISK} mktable ${PARTITION_TYPE}
 	max=$(( $(cat /sys/block/${DISK}/size) * 512 / 1024 /1024 - 1))
 	root_max=30
 	if [ $max -le $(( ${root_max} * 1024)) ]
@@ -95,12 +95,12 @@ function format_disk() {
 		root_end=$(( ${root_max} * 1024 ))
 	fi
 
-	if [ ${INSTALLATION_TYPE} -eq "uefi" ]
+	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
 		boot_end=512
 		echo " Creating /boot/efi partition"
 		parted -a optimal -s /dev/${DISK} unit MiB mkpart ESI fat32 1 $boot_end >/dev/null
-	elif [ ${INSTALLATION_TYPE} -eq "bios" ]
+	elif [ ${INSTALLATION_TYPE} == "bios" ]
 	then
 		boot_end=128
 		" Creating /boot partition"
@@ -112,15 +112,15 @@ function format_disk() {
 	echo " Creating /home partition"
 	parted -a optimal -s /dev/${DISK} unit MiB mkpart primary $root_end $max >/dev/null
 
-	if [ ${INSTALLATION_TYPE} -eq "uefi" ]
+	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
 		echo " Setting system bootable"
 		parted -a optimal -s /dev/${DISK} set 1 boot on >/dev/null
-	elif [ ${INSTALLATION_TYPE} -eq "bios" ]
+	elif [ ${INSTALLATION_TYPE} == "bios" ]
 	then
 		echo " Setting system bootable"
 		parted -a optimal -s /dev/${DISK} toggle 1 boot >/dev/null
-		if [ "${PARTITION_TYPE}" -eq "gpt"]
+		if [ ${PARTITION_TYPE} == "gpt"]
 		then
 			sgdisk /dev/${DISK} --attributes=1:set:2 >/dev/null
 		fi
@@ -136,12 +136,12 @@ function format_disk() {
 	udevadm settle
 
 	# Creating Filesystems
-	if [ ${INSTALLATION_TYPE} -eq "uefi" ]
+	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
 		echo " Making /boot/efi filesystem"
 		mkfs.vfat -F32 /dev/${DISK}1 >/dev/null
 	
-	elif [ ${INSTALLATION_TYPE} -eq "bios" ]
+	elif [ ${INSTALLATION_TYPE} == "bios" ]
 	then
 		echo " Making /boot filesystem"
 		mkfs.ext2 /dev/${DISK}1 >/dev/null
@@ -158,11 +158,11 @@ function format_disk() {
 function mount_disk() {
 	echo " Mounting filesystems"
 	mount -t ${FS} /dev/${DISK}2 ${INSTALLATION_DIR}
-	if [ $INSTALLATION_TYPE -eq "uefi" ]
+	if [ $INSTALLATION_TYPE == "uefi" ]
 	then
 		mkdir -p ${INSTALLATION_DIR}/{boot/efi,home}
 		mount /dev/${DISK}1 ${INSTALLATION_DIR}/boot/efi >/dev/null
-	elif [ ${INSTALLATION_TYPE} -eq "bios" ]
+	elif [ ${INSTALLATION_TYPE} == "bios" ]
 	then
 		mkdir -p ${INSTALLATION_DIR}/{boot,home}
 		mount -t ext2 /dev/${DISK}1 $INSTALLATION_DIR/boot >/dev/null
@@ -186,10 +186,10 @@ function create_addons_installer() {
 	touch ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	echo "apt-get -y update" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	echo "apt-get -y install linux-image taskel aptitude" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
-	if [ ${INSTALLATION_TYPE} -eq "uefi" ]
+	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
 		echo "apt-get -y install grub-efi-amd64\nupdate-grub\ngrub-install --target=x86_64-efi" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
-	elif [ ${INSTALLATION_TYPE} -eq "grub" ]
+	elif [ ${INSTALLATION_TYPE} == "bios" ]
 	then
 		echo "apt-get -y install grub-pc grub-common\nupdate-grub\ngrub-install /dev/${DISK}1" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	fi
@@ -226,10 +226,10 @@ function exec_addons_installer() {
 function make_fstab() {
 	# generating fstab line for /boot/efi or /boot
 	echo " Generating /etc/fstab file"
-	if [ ${INSTALLATON_TYPE} -eq "uefi" ]
+	if [ ${INSTALLATON_TYPE} == "uefi" ]
 	then
 		echo "${DISK}1 /boot/efi vfat defaults 1 0" > ${INSTALLAYION_DIR}/etc/fstab
-	elif [ ${INSTALLATION_TYPE} -eq "bios" ]
+	elif [ ${INSTALLATION_TYPE} == "bios" ]
 	then
 		echo "${DISK}1 /boot ext2 noatime 1 0" > ${INSTALLATION_DIR}/etc/fstab
 	fi
@@ -270,11 +270,11 @@ function manual_chroot() {
 
 function umount_disk() {
 	sync
-	if [ ${INSTALLATION_TYPE} -eq "uefi" ]
+	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
 		echo " Umounting disk"
 		umount -fv ${INSTALLATION_DIR}/boot/efi
-	elif [ ${INSTALLATION_TYPE} -eq "bios" ]
+	elif [ ${INSTALLATION_TYPE} == "bios" ]
 	then
 		echo " Umounting disk"
 		umount -fv ${INSTALLATION_DIR}/boot
