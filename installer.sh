@@ -177,6 +177,7 @@ function mount_disk() {
 function install_core() {
 	echo " Installing core system"
 	debootstrap --arch ${ARCH} ${DEBIAN_VERSION} ${INSTALLATION_DIR} >/dev/null
+	echo " Please wait (this operation can take a lot of time)"
 }
 
 # create a script inside the environmen built by debootstrap needed to complete the installation
