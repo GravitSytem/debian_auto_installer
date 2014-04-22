@@ -16,7 +16,7 @@ PARTITION_TYPE="gpt"
 INSTALLATION_TYPE="uefi"
 INSTALLATION_ADDONS="laptop" # taskel package set (desktop, web-server, print-server, dns-server, file-server, mail-server, database-server, ssh-server, laptop, manuals)
 DE="xfce"
-DISK="/dev/sda"
+DISK="sda"
 SET_USER=1
 USER="user"
 USER_PASSWD="user_passwd"
@@ -185,8 +185,9 @@ function install_core() {
 function create_addons_installer() {
 	# core system
 	touch ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+	echo "DEBIAN_FRONTEND=noninteractive" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	echo "apt-get -y update" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
-	echo "apt-get -y install linux-image-${ARCH} taskel aptitude" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+	echo "apt-get  -y install linux-image-${ARCH} taskel aptitude" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
 		echo "apt-get -y install grub-efi-amd64 && update-grub && grub-install --target=x86_64-efi" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
@@ -221,7 +222,7 @@ function exec_addons_installer() {
 	mount --bind /dev/pts ${INSTALLATION_DIR}/dev/pts >/dev/null
 	mount -t proc none ${INSTALLATION_DIR}/proc >/dev/null
 	cp -L /etc/resolv.conf ${INSTALLATION_DIR}/etc/ >/dev/null
-	chroot ${INSTALLATION_DIR} /bin/bash DEBIAN_FRONTEND=noninteractive /usr/local/bin/deb_installer_core.sh
+	chroot ${INSTALLATION_DIR} /bin/bash /usr/local/bin/deb_installer_core.sh
 }
 
 function make_fstab() {
