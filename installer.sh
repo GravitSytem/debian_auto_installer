@@ -228,7 +228,7 @@ function exec_addons_installer() {
 function make_fstab() {
 	# generating fstab line for /boot/efi or /boot
 	echo " Generating /etc/fstab file"
-	if [ ${INSTALLATON_TYPE} == "uefi" ]
+	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
 		echo "${DISK}1 /boot/efi vfat defaults 1 0" > ${INSTALLAYION_DIR}/etc/fstab
 	elif [ ${INSTALLATION_TYPE} == "bios" ]
