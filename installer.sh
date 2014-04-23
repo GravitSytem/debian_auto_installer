@@ -120,7 +120,7 @@ function format_disk() {
 	then
 		echo " Setting system bootable"
 		parted -a optimal -s /dev/${DISK} toggle 1 boot >/dev/null
-		if [ ${PARTITION_TYPE} == "gpt"]
+		if [ ${PARTITION_TYPE} == "gpt" ]
 		then
 			sgdisk /dev/${DISK} --attributes=1:set:2 >/dev/null
 		fi
@@ -250,7 +250,7 @@ function create_conf() {
 	add_conf_line "echo ${FQDN} > /etc/hostname"
 	add_conf_line 'echo "127.0.0.1 localhost" >> /etc/hosts'
 	add_conf_line 'echo "127.0.1.1 ${FQDN}" >> /etc/hosts'
-	add_conf_line 'echo -e "${ROOT_PASSWORD}\n${ROOT_PASSWORD}" | passwd -p'
+	add_conf_line 'echo -e "${ROOT_PASSWORD}\n${ROOT_PASSWORD}" | passwd -q'
 
 }
 
