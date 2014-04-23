@@ -103,7 +103,7 @@ function format_disk() {
 	elif [ ${INSTALLATION_TYPE} == "bios" ]
 	then
 		boot_end=128
-		" Creating /boot partition"
+		echo " Creatng /boot partition"
 		parted -a optimal -s /dev/${DISK} unit MiB mkpart primary 1 $boot_end >/dev/null
 	fi
 
@@ -250,7 +250,7 @@ function create_conf() {
 	add_conf_line "echo ${FQDN} > /etc/hostname"
 	add_conf_line 'echo "127.0.0.1 localhost" >> /etc/hosts'
 	add_conf_line 'echo "127.0.1.1 ${FQDN}" >> /etc/hosts'
-	add_conf_line 'echo -e "${ROOT_PASSWORD}\n${ROOT_PASSWORD}" | passwd -q'
+	add_conf_line 'echo -e "${ROOT_PASSWORD}\n${ROOT_PASSWORD}" | passwd root'
 
 }
 
