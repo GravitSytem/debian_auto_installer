@@ -186,7 +186,7 @@ function create_addons_installer() {
 	# core system
 	touch ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	echo "DEBIAN_FRONTEND=noninteractive apt-get -y update" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
-	echo "DEBIAN_FRONTEND=noninteractive apt-get -y install linux-image-${ARCH} tasksel aptitude" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+	echo "DEBIAN_FRONTEND=noninteractive apt-get -y install linux-image-${ARCH}" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
 		echo "DEBIAN_FRONTEND=noninteractive apt-get -y install grub-efi-amd64 && update-grub && grub-install --target=x86_64-efi" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
@@ -250,7 +250,7 @@ function create_conf() {
 	add_conf_line "echo ${FQDN} > /etc/hostname"
 	add_conf_line 'echo "127.0.0.1 localhost" >> /etc/hosts'
 	add_conf_line 'echo "127.0.1.1 ${FQDN}" >> /etc/hosts'
-	add_conf_line 'usermod --password ${PASSWORD_ROOT} root'
+	add_conf_line 'echo "root:${PASSWORD_ROOT}" | chpasswd'
 
 }
 
