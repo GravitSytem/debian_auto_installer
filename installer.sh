@@ -250,7 +250,7 @@ function create_conf() {
 	add_conf_line "echo ${FQDN} > /etc/hostname"
 	add_conf_line 'echo "127.0.0.1 localhost" >> /etc/hosts'
 	add_conf_line 'echo "127.0.1.1 ${FQDN}" >> /etc/hosts'
-	add_conf_line 'echo "root:${PASSWORD_ROOT}" | chpasswd'
+	add_conf_line 'echo -e "${ROOT_PASSWORD}\n${ROOT_PASSWORD}" | passwd -p'
 
 }
 
