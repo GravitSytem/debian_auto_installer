@@ -185,15 +185,14 @@ function install_core() {
 function create_addons_installer() {
 	# core system
 	touch ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
-	echo "DEBIAN_FRONTEND=noninteractive" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
-	echo "apt-get -y update" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
-	echo "apt-get  -y install linux-image-${ARCH} taskel aptitude" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+	echo "DEBIAN_FRONTEND=noninteractive apt-get -y update" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+	echo "DEBIAN_FRONTEND=noninteractive apt-get -y install linux-image-${ARCH} taskel aptitude" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
-		echo "apt-get -y install grub-efi-amd64 && update-grub && grub-install --target=x86_64-efi" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+		echo "DEBIAN_FRONTEND=noninteractive apt-get -y install grub-efi-amd64 && update-grub && grub-install --target=x86_64-efi" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	elif [ ${INSTALLATION_TYPE} == "bios" ]
 	then
-		echo "apt-get -y install grub-pc grub-common && update-grub && grub-install /dev/${DISK}" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+		echo "DEBIAN_FRONTEND=noninteractive apt-get -y install grub-pc grub-common && update-grub && grub-install /dev/${DISK}" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	fi
 	echo "taskel install ${INSTALLATION_ADDONS} --new-install" >> ${INSTALLATION_DIR}/usr/local/deb_installer_core.sh
 	# desktop environment
