@@ -229,15 +229,15 @@ function make_fstab() {
 	echo " Generating /etc/fstab file"
 	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
-		echo "${DISK}1 /boot/efi vfat defaults 1 0" > ${INSTALLAYION_DIR}/etc/fstab
+		echo "/dev/${DISK}1 /boot/efi vfat defaults 1 0" > ${INSTALLAYION_DIR}/etc/fstab
 	elif [ ${INSTALLATION_TYPE} == "bios" ]
 	then
-		echo "${DISK}1 /boot ext2 noatime 1 0" > ${INSTALLATION_DIR}/etc/fstab
+		echo "/dev/${DISK}1 /boot ext2 noatime 1 0" > ${INSTALLATION_DIR}/etc/fstab
 	fi
 	# generating fstab line for /
-	echo "${DISK}2 / ${FS} defaults 1 1" >> ${INSTALLATION_DIR}/etc/fstab
+	echo "/dev/${DISK}2 / ${FS} defaults 1 1" >> ${INSTALLATION_DIR}/etc/fstab
 	# generating fstab line for /home
-	echo "${DISK}3 /home ${FS} defaults 1 2" >> ${INSTALLATION_DIR}/etc/fstab
+	echo "/dev/${DISK}3 /home ${FS} defaults 1 2" >> ${INSTALLATION_DIR}/etc/fstab
 }
 
 function add_conf_line() {
