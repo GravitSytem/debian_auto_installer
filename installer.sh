@@ -1,30 +1,33 @@
 #!/usr/bin/env bash
 
-# automated debian install script
-# require a debian/ubuntu live (booted via uefi for the efi installation), a internet connection and root access
+# Name 			: GravitInstaller.sh
+# Description 	: This file is a simple script for installation of Gravit. This programme is executed by electron interface installer after user configuration
+# Path 			: /subsystem/tmp/GravitInstaller.sh
+# License		: GNU GPL v3
 
 INSTALLATION_DIR="/mnt/debian"
-TIMEZONE="Europe/Rome"
-LANGUAGE="it_IT.UTF-8"
-KEYMAP="it"
-FQDN="Gandalf.net"
-ROOT_PASSWORD="root_passwd"
+TIMEZONE="Europe/Paris"
+LANGUAGE="fr_FR.UTF-8"
+KEYMAP="fr"
+FQDN="Gravit"
+ROOT_PASSWORD="toor"
 ARCH="amd64"
 DEBIAN_VERSION="jessie"
 FS="ext4"
 PARTITION_TYPE="gpt"
-INSTALLATION_TYPE="uefi"
+INSTALLATION_TYPE="bios"
 INSTALLATION_ADDONS="laptop" # taskel package set (desktop, web-server, print-server, dns-server, file-server, mail-server, database-server, ssh-server, laptop, manuals)
-DE="xfce"
 DISK="sda"
 SET_USER=1
-USER="user"
-USER_PASSWD="user_passwd"
+USER="powersaucisse"
+USER_PASSWD="gsupervisor"
+log="/subsystem/var/log/Installation"
+min_disk_size=50000
 
 function usage() {
 	echo
 	echo " Usage"
-	echo " ${0} -d sdX -w password -b partition type -f filesystem -k keymap -l lang -n hostname -t timezone -B bios/uefi -v debian version -a arch -s taskel sets -X desktop environment"
+	echo " ${0} -d sdX -w password -b partition type -f filesystem -k keymap -l lang -n hostname -t timezone -B bios/uefi -v debian version -a arch -s taskel sets"
 	echo 
 	echo " -d : Target device"
 	echo " -w : Root password"
@@ -38,7 +41,6 @@ function usage() {
 	echo " -v : Debian version (eg. wheezy, jessie, sid)"
 	echo " -a : Architecture (eg. amd64, i486 ...)"
 	echo " -s : Taskel sets (eg. laptop, web-server, file-server ...)"
-	echo " -X : Desktop environment (eg. xfce, gnome, none)"
 	exit 1
 }
 
@@ -69,8 +71,7 @@ function installation_summary() {
 # show a warning before the installation
 
 function warning() {
-	loadkeys ${KEYMAP}
-
+	loadkeys ${KEYMAP} || setxkbmap ${KEYMAP}
 	echo "The script is going to destroy everithing on /dev/${DISK}."
 	echo "Press RETURN to start installation or CTRL-C to cancel."
 	read
@@ -85,7 +86,7 @@ function format_disk() {
 	dd if=/dev/zero of=/dev/${DISK} bs=512 count=2048 >/dev/null 2>&1
 	wipefs -a /dev/${DISK} 2>/dev/null
 	echo " Writing partition table"
-	parted -s /dev/${DISK} mktable ${PARTITION_TYPE}
+	parted -s /dev/${DISK} mktable ${PARTITION_TYPE} # voir mktable, possibilité d'erreur. confusion avec mklabel
 	max=$(( $(cat /sys/block/${DISK}/size) * 512 / 1024 /1024 - 1))
 	root_max=30
 	if [ $max -le $(( ${root_max} * 1024)) ]
@@ -103,7 +104,7 @@ function format_disk() {
 	elif [ ${INSTALLATION_TYPE} == "bios" ]
 	then
 		boot_end=128
-		echo " Creatng /boot partition"
+		echo " Creating /boot partition"
 		parted -a optimal -s /dev/${DISK} unit MiB mkpart primary 1 $boot_end >/dev/null
 	fi
 
@@ -176,7 +177,7 @@ function mount_disk() {
 
 function install_core() {
 	echo " Installing core system"
-	debootstrap --arch ${ARCH} ${DEBIAN_VERSION} ${INSTALLATION_DIR} >/dev/null
+	debootstrap --arch ${ARCH} ${DEBIAN_VERSION} ${INSTALLATION_DIR} >/dev/null # a modifier
 	echo " Please wait (this operation can take a lot of time)"
 }
 
@@ -186,7 +187,7 @@ function create_addons_installer() {
 	# core system
 	touch ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	echo "DEBIAN_FRONTEND=noninteractive apt-get -y update" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
-	echo "DEBIAN_FRONTEND=noninteractive apt-get -y install linux-image-${ARCH}" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
+	echo "DEBIAN_FRONTEND=noninteractive apt-get -y install linux-image-4.15.0-20-generic" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
 		echo "DEBIAN_FRONTEND=noninteractive apt-get -y install grub-efi-amd64 && update-grub && grub-install --target=x86_64-efi" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
@@ -194,7 +195,7 @@ function create_addons_installer() {
 	then
 		echo "DEBIAN_FRONTEND=noninteractive apt-get -y install grub-pc grub-common && update-grub && grub-install /dev/${DISK}" >> ${INSTALLATION_DIR}/usr/local/bin/deb_installer_core.sh
 	fi
-	echo "taskel install ${INSTALLATION_ADDONS} --new-install" >> ${INSTALLATION_DIR}/usr/local/deb_installer_core.sh
+	echo "tasksel install ${INSTALLATION_ADDONS} --new-install" >> ${INSTALLATION_DIR}/usr/local/deb_installer_core.sh
 	# desktop environment
 	case ${DE} in
 		"xfce")
@@ -215,7 +216,7 @@ function create_addons_installer() {
 }
 	
 function exec_addons_installer() {
-	echo " Mounting environment filesystem"
+	echo " Mounting environment filesystem" >> ${log}
 	mount --bind /dev ${INSTALLATION_DIR}/dev >/dev/null
 	mount --bind /sys ${INSTALLATION_DIR}/sys >/dev/null
 	mount --bind /dev/pts ${INSTALLATION_DIR}/dev/pts >/dev/null
@@ -226,7 +227,7 @@ function exec_addons_installer() {
 
 function make_fstab() {
 	# generating fstab line for /boot/efi or /boot
-	echo " Generating /etc/fstab file"
+	echo " Generating /etc/fstab file" >> ${log}
 	if [ ${INSTALLATION_TYPE} == "uefi" ]
 	then
 		echo "/dev/${DISK}1 /boot/efi vfat defaults 1 0" > ${INSTALLAYION_DIR}/etc/fstab
@@ -284,7 +285,7 @@ function umount_disk() {
 	echo " System installed"
 }
 
-OPTSTRING=d:w:b:f:k:hl:n:f:B:v:a:s:X:
+OPTSTRING=d:w:b:f:k:hl:n:f:B:v:a:s:
 
 while getopts ${OPTSTRING} OPT
 do
@@ -324,7 +325,7 @@ done
 
 if  [ $(id -u) -ne 0 ]
 then
-	echo "!!! The script must be run as root !!!"
+	echo "2" > /subsystem/var/command_descriptor
 	exit 1
 fi
 
